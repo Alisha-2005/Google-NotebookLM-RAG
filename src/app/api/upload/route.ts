@@ -4,17 +4,12 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { QdrantVectorStore } from "@langchain/qdrant";
 import { Document } from "@langchain/core/documents";
 import { v4 as uuidv4 } from "uuid";
-import { PDFParse } from "pdf-parse";
+import pdfParse from "pdf-parse";
 
 // Run in Node.js runtime (required for pdf-parse)
 export const runtime = "nodejs";
 // 60 seconds max duration for large PDFs
 export const maxDuration = 60;
-
-// Polyfill DOMMatrix for pdf-parse in Node.js environment
-if (typeof globalThis.DOMMatrix === "undefined") {
-  (globalThis as any).DOMMatrix = class DOMMatrix {};
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,14 +27,8 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // pdf-parse v2 API: pass the buffer as `data` in the constructor
-    const parser = new PDFParse({ data: buffer });
-    const textResult = await parser.getText();
-
-    // textResult.pages is an array of page objects
-    const textContent = textResult.pages
-      .map((p: { text: string }) => p.text)
-      .join("\n");
+    const textResult = await pdfParse(buffer);
+    const textContent = textResult.text;
 
     if (!textContent || textContent.trim().length === 0) {
       return NextResponse.json(
