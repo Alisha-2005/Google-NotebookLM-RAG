@@ -11,6 +11,11 @@ export const runtime = "nodejs";
 // 60 seconds max duration for large PDFs
 export const maxDuration = 60;
 
+// Polyfill DOMMatrix for pdf-parse in Node.js environment
+if (typeof globalThis.DOMMatrix === "undefined") {
+  (globalThis as any).DOMMatrix = class DOMMatrix {};
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
